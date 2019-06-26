@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/mbajaman/Botsetta-Scone#readme",
   "dependencies": {
-    "discord.js": "^11.5.1"
+    "discord.js": "^11.5.1",
+    "winston": "^3.2.1"
   }
 }
