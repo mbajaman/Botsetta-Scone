@@ -55,15 +55,19 @@ client.on('message', (message) => {
   function removeUselessWords(txt) {
     txt = txt.replace(new RegExp('!filter', 'gi'), ' ')
       .replace(/\s{2,}/g, ' ');
-    txtArray = txt.split(" ");
-    txtArray.shift();
-    for (var wordPos in txtArray) {
-      //console.log(txtArray[wordPos].replace(/\s/g, ''));
-      oxfordApiCall(txtArray[wordPos]).then(temp => {
-      })
-      //let temp = await oxfordApiCall(txtArray[wordPos]);
-      //console.log("temp");
+    if(txt === " "){
+      
+    }else{
+      txtArray = txt.split(" ");
+      txtArray.shift();
+      for (var wordPos in txtArray) {
+        //console.log(txtArray[wordPos].replace(/\s/g, ''));
+        oxfordApiCall(txtArray[wordPos]).then(temp => {})
+        //let temp = await oxfordApiCall(txtArray[wordPos]);
+        //console.log("temp");
+      }
     }
+  
   }
 
 
@@ -71,7 +75,7 @@ client.on('message', (message) => {
 
     const app_id = ""; // insert your APP Id
     const app_key = ""; // insert your APP Key
-    const wordId = word;
+    const wordId = word.toLowerCase();;
     const fields = "definitions";
     const strictMatch = "false";
 
@@ -93,11 +97,14 @@ client.on('message', (message) => {
         });
         resp.on('end', () => {
           jsonData = JSON.parse(body);
-					//need to add something here to verify words
-          if (jsonData.results[0]) {
+          if (Object.keys(jsonData)[0] != "error") {
             if (jsonData.results[0].lexicalEntries[0].lexicalCategory.text === "Noun") {
-              console.log("Noun!");
-              addToNounArray(word);
+              if (word.length < 3) {
+
+              } else {
+                console.log("Noun!");
+                addToNounArray(word);
+              }
             }
           }
         });
@@ -109,15 +116,54 @@ client.on('message', (message) => {
 
   function addToNounArray(noun) {
     nounArray.push(noun);
-		sendMessage(nounArray)
   }
 
-	//I've got it so it does it in order now but it does it every time there is a word, may wanna add something to fix that or else it'll spam chat for each noun
+  //I've got it so it does it in order now but it does it every time there is a word, may wanna add something to fix that or else it'll spam chat for each noun
   function sendMessage(words) {
     console.log(words);
     if (words[0] != " ") {
-      message.channel.send(words[(Math.random() * words.length) | 0]);
+      jokeWord = words[(Math.random() * words.length) | 0];
+      message.channel.send(jokeWord);
+      jokeAPICall(jokeWord);
     }
+  }
+
+  function jokeAPICall(word) {
+    // url = "https://webknox-jokes.p.rapidapi.com"
+    // const options = {
+    //   method: "GET",
+    //   url: url,
+    //   headers:{
+    //     "X-RapidAPI-Host": "",
+    //     "X-RapidAPI-Key": ""
+    //   }
+    // };
+
+    const options = {
+      host: 'webknox-jokes.p.rapidapi.com',
+      port: '443',
+      path: "/jokes/search?category=Pun&minRating=5&numJokes=1&keywords=" + word,
+      method: "GET",
+      headers: {
+        'X-RapidAPI-Host': "webknox-jokes.p.rapidapi.com",
+        'X-RapidAPI-Key': ""
+      }
+    }
+    
+    http.get(options, (resp) => {
+      let body = '';
+      resp.on('data', (d) => {
+        body += d;
+      });
+      resp.on('end', () => {
+        jsonData = JSON.parse(body);
+        console.log(jsonData);
+        if(jsonData.length > 0){
+          jokeString = jsonData[0].joke;
+          message.channel.send(jokeString);
+        }
+      });
+    });
   }
 
 });
