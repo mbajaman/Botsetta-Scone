@@ -1,21 +1,16 @@
 const Discord = require('discord.js');
 const axios = require('axios');
+
 //He's a good tank
 const logger = require('winston');
+
 const auth = require('./auth.json');
 const http = require("https");
-//Configure logger settings
-logger.remove(logger.transports.Console);
-logger.add(new logger.transports.Console, {
-  colorize: true
-});
-logger.level = 'debug';
 
 //Initialize Discord bot
 const client = new Discord.Client({
   token: auth.token
 });
-
 
 client.on('message', (message) => {
 
@@ -45,6 +40,7 @@ client.on('message', (message) => {
 	  		console.log(error);
 	  	});
   }
+
   //Corporate BS generator
   else if (!message.author.bot && message.content.startsWith("!corpbs")) {		
   	console.log("Executed !corpbs command");
@@ -63,6 +59,11 @@ client.on('message', (message) => {
   		console.log(error);
   	});
   }
+
+  //Help Command
+  else if (!message.author.bot && message.content.startsWith("!help")) {		
+  	message.channel.send("```You can refer to the documentation here to look up bot commands!\nhttps://github.com/mbajaman/Botsetta-Scone/blob/master/README.md\nTo get the jokes feature working feel free to spam a bit in the channel as there is a 1/10 chance for the message to get turned into a joke```")
+  }
   else if (!message.author.bot) {
     chance = Math.floor(Math.random() * 10);
     console.log(chance);
@@ -73,8 +74,7 @@ client.on('message', (message) => {
     }
   }
 
-
-  //remove all non nouns
+  //Remove all non nouns
   async function removeUselessWords(txt) {
     nounArray = [];
     txt = txt.replace(new RegExp('!filter', 'gi'), ' ')
@@ -89,26 +89,29 @@ client.on('message', (message) => {
       for (var wordPos in txtArray) {
         console.log("Started waiting");
         if(txtArray[wordPos]){
-          var isNoun = await oxfordApiCall(txtArray[wordPos].replace(/[^a-zA-Z ]/g, ""));
-          console.log("finished waiting");
+          word = (txtArray[wordPos].replace(/[^a-zA-Z ]/g, ""));
+          console.log("REGEX WORK:" + word);
+          if(word.length > 2){
+          	var isNoun = await oxfordApiCall(word);
+          	console.log("finished waiting");
+          }
         }
         if(isNoun){
-          nounArray.push(txtArray[wordPos]);
+          nounArray.push(word);
         }
         console.log("==================");
       }
-      
+
       sendMessage(nounArray);
     }
   }
 
-
-
+//Call to Oxford Dictionary API
   function oxfordApiCall(word) {
     return new Promise(function(resolve, reject) {
       isNoun = false;
-      const app_id = "4885517e"; // insert your APP Id
-      const app_key = "13ee867b28de76f474342fd8e7307b51"; // insert your APP Key
+      const app_id = auth.app_id; // insert your APP Id
+      const app_key = auth.app_key; // insert your APP Key
       const wordId = word.toLowerCase();;
       const fields = "definitions";
       const strictMatch = "false";
@@ -163,7 +166,6 @@ client.on('message', (message) => {
     nounArray.push(noun);
   }
 
-  //I've got it so it does it in order now but it does it every time there is a word, may wanna add something to fix that or else it'll spam chat for each noun
   function sendMessage(words) {
     console.log(words);
     if (words[0] != " ") {
@@ -172,6 +174,7 @@ client.on('message', (message) => {
     }
   }
 
+//Call to Jokes API
   function jokeAPICall(word) {
 
     const options = {
@@ -180,8 +183,8 @@ client.on('message', (message) => {
       path: "/jokes/search?maxLength=100&minRating=5&numJokes=1&keywords=" + word,
       method: "GET",
       headers: {
-        'X-RapidAPI-Host': "webknox-jokes.p.rapidapi.com",
-        'X-RapidAPI-Key': "10661540e8msha03e97970406c1dp17bf18jsn14adbb197094"
+        'X-RapidAPI-Host': auth.jokes_host,
+        'X-RapidAPI-Key': auth.jokes_key
       }
     }
 
