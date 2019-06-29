@@ -1,4 +1,5 @@
 # Botsetta-Scone
+Bot can be tested here at our server: https://discord.gg/36c9mXz
 ---
 
 ### Hail Botsetta!

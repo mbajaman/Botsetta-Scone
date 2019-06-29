@@ -4,6 +4,7 @@ const axios = require('axios');
 //He's a good tank
 const logger = require('winston');
 
+//JSON file with API keys
 const auth = require('./auth.json');
 const http = require("https");
 
