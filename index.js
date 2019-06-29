@@ -1,7 +1,8 @@
 const Discord = require('discord.js');
+const axios = require('axios');
+//He's a good tank
 const logger = require('winston');
 const auth = require('./auth.json');
-const axios = require('axios');
 const http = require("https");
 //Configure logger settings
 logger.remove(logger.transports.Console);
@@ -18,20 +19,53 @@ const client = new Discord.Client({
 
 client.on('message', (message) => {
 
-  //Filter message command
-  
   //Pirate translator
   if (!message.author.bot && message.content.startsWith("!pirate")) {
-    console.log("Executed !pirate command");
-    message.channel.send("Executed !pirate command");
+	  	console.log("Executed !pirate command");
+	  	// message.channel.send("Executed !pirate command");
+	  	var messageContent = message.content;        
+	  	var messageContent = messageContent.replace(new RegExp('\!pirate', 'gi'), ' ')
+                        .replace(/\s{2,}/g, ' ');   
+	  	var uri = "https://api.funtranslations.com/translate/pirate.json?text=" + messageContent;
+	  	var encodedUri = encodeURI(uri);
+
+	  	console.log(encodedUri);
+
+	  	axios({
+	  		method: 'post',
+	  		url: encodedUri
+	  	})
+	  	.then(function (response){
+	  		var pirate_trans = response.data.contents.translated;
+	  		console.log(pirate_trans);
+
+	  		message.channel.send(pirate_trans);
+	  	})
+	  	.catch(function (error){
+	  		console.log(error);
+	  	});
   }
   //Corporate BS generator
-  else if (!message.author.bot && message.content.startsWith("!corpbs")) {
-    console.log("Executed !corpbs command");
-    message.channel.send("Executed !corpbs command");
+  else if (!message.author.bot && message.content.startsWith("!corpbs")) {		
+  	console.log("Executed !corpbs command");
+
+	var uri = "https://corporatebs-generator.sameerkumar.website";
+	axios({
+  		method: 'get',
+  		url: uri
+  	})
+  	.then(function (response){
+  		var corpbs_trans = response.data.phrase;
+  		console.log(corpbs_trans);
+  		message.channel.send(corpbs_trans);
+  	})
+  	.catch(function (error){
+  		console.log(error);
+  	});
   }
   else if (!message.author.bot) {
     filteredmessage = message.content
+    console.log(message.content);
     removeUselessWords(filteredmessage);
   }
 
@@ -41,15 +75,19 @@ client.on('message', (message) => {
     nounArray = [];
     txt = txt.replace(new RegExp('!filter', 'gi'), ' ')
       .replace(/\s{2,}/g, ' ');
-    if (txt === " ") {
 
-    } else {
+    if (txt === " " ) {
+
+    } 
+    else {
       txtArray = txt.split(" ");
-      txtArray.shift();
+      console.log(txtArray);
       for (var wordPos in txtArray) {
         console.log("Started waiting");
-        var isNoun = await oxfordApiCall(txtArray[wordPos].replace(/[^\w\s]/gi, ''));
-        console.log("finished waiting");
+        if(txtArray[wordPos]){
+          var isNoun = await oxfordApiCall(txtArray[wordPos].replace(/[^a-zA-Z ]/g, ""));
+          console.log("finished waiting");
+        }
         if(isNoun){
           nounArray.push(txtArray[wordPos]);
         }
@@ -58,8 +96,8 @@ client.on('message', (message) => {
       
       sendMessage(nounArray);
     }
-
   }
+
 
 
   function oxfordApiCall(word) {
@@ -135,7 +173,7 @@ client.on('message', (message) => {
     const options = {
       host: 'webknox-jokes.p.rapidapi.com',
       port: '443',
-      path: "/jokes/search?category=Pun&minRating=5&numJokes=1&keywords=" + word,
+      path: "/jokes/search?&minRating=5&numJokes=1&keywords=" + word + "&maxLength=100",
       method: "GET",
       headers: {
         'X-RapidAPI-Host': "webknox-jokes.p.rapidapi.com",
@@ -158,7 +196,7 @@ client.on('message', (message) => {
       });
     });
   }
-
 });
+
 
 client.login(auth.token);
