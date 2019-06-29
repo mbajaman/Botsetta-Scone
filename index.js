@@ -64,9 +64,13 @@ client.on('message', (message) => {
   	});
   }
   else if (!message.author.bot) {
-    filteredmessage = message.content
-    console.log(message.content);
-    removeUselessWords(filteredmessage);
+    chance = Math.floor(Math.random() * 10);
+    console.log(chance);
+    if(chance === 7){
+      filteredmessage = message.content
+      console.log(message.content);
+      removeUselessWords(filteredmessage);
+    }
   }
 
 
@@ -173,7 +177,7 @@ client.on('message', (message) => {
     const options = {
       host: 'webknox-jokes.p.rapidapi.com',
       port: '443',
-      path: "/jokes/search?&minRating=5&numJokes=1&keywords=" + word + "&maxLength=100",
+      path: "/jokes/search?maxLength=100&minRating=5&numJokes=1&keywords=" + word,
       method: "GET",
       headers: {
         'X-RapidAPI-Host': "webknox-jokes.p.rapidapi.com",
