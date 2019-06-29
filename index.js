@@ -1,4 +1,6 @@
 const Discord = require('discord.js');
+const axios = require('axios');
+//He's a good tank
 const logger = require('winston');
 const auth = require('./auth.json');
 
@@ -17,7 +19,7 @@ client.on('message', (message)=>{
 
 	//Filter message command
 	if(!message.author.bot && message.content.startsWith("!filter")){
-	    filteredmessage = message.content
+	    filteredmessage = message.content;
 	    //message.channel.send("It\'s fine now. Why? Because I am here!");
 	    //we want to read the message here
 	    //we can use the message.content to get the message content
@@ -32,20 +34,58 @@ client.on('message', (message)=>{
 	      message.channel.send("No usable words nerd");
 	    }
 	  }
+
   	//Pirate translator
 	else if(!message.author.bot && message.content.startsWith("!pirate")){
 	  	console.log("Executed !pirate command");
-	  	message.channel.send("Executed !pirate command");
+	  	// message.channel.send("Executed !pirate command");
+	  	var messageContent = message.content;        
+	  	var messageContent = messageContent.replace(new RegExp('\!pirate', 'gi'), ' ')
+                        .replace(/\s{2,}/g, ' ');   
+	  	var uri = "https://api.funtranslations.com/translate/pirate.json?text=" + messageContent;
+	  	var encodedUri = encodeURI(uri);
+
+	  	console.log(encodedUri);
+
+	  	axios({
+	  		method: 'post',
+	  		url: encodedUri
+	  	})
+	  	.then(function (response){
+	  		var pirate_trans = response.data.contents.translated;
+	  		console.log(pirate_trans);
+
+	  		message.channel.send(pirate_trans);
+	  	})
+	  	.catch(function (error){
+	  		console.log(error);
+	  	});
 	  }
+
   	//Shakespeare english tranlsator
-	else if(!message.author.bot && message.content.startsWith("!")){
+	else if(!message.author.bot && message.content.startsWith("!peary")){
 	  	console.log("Executed !peary command");
 	  	message.channel.send("Executed !peary command");
 	  }
   	//Corporate BS generator
 	else if(!message.author.bot && message.content.startsWith("!corpbs")){
-	  	console.log("Executed !corpbs command");
-	  	message.channel.send("Executed !corpbs command");
+		console.log("Executed !corpbs command");
+
+		var uri = "https://corporatebs-generator.sameerkumar.website";
+
+		axios({
+	  		method: 'get',
+	  		url: uri
+	  	})
+	  	.then(function (response){
+	  		var corpbs_trans = response.data.phrase;
+	  		console.log(corpbs_trans);
+
+	  		message.channel.send(corpbs_trans);
+	  	})
+	  	.catch(function (error){
+	  		console.log(error);
+	  	});
 	  }
 
 	});
@@ -60,11 +100,6 @@ client.on('message', (message)=>{
           "with", "wont", "would", "wouldnt", "you", "and|"
         ];
         var expStr = uselessWordsArray.join("|");
-		// logger.log({
-		//   level: 'debug',
-		//   message: expStr
-		// });
-		//Removes command text
         var text = txt.replace(new RegExp('\!filter', 'gi'), ' ')
                         .replace(/\s{2,}/g, ' ');     
         //Removes useless words         
