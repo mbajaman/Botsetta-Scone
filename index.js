@@ -3,40 +3,26 @@ const axios = require('axios');
 //He's a good tank
 const logger = require('winston');
 const auth = require('./auth.json');
-
+const http = require("https");
 //Configure logger settings
 logger.remove(logger.transports.Console);
-logger.add(new logger.transports.Console, {colorize: true});
+logger.add(new logger.transports.Console, {
+  colorize: true
+});
 logger.level = 'debug';
 
 //Initialize Discord bot
 const client = new Discord.Client({
-	token: auth.token
+  token: auth.token
 });
 
 
-client.on('message', (message)=>{
+client.on('message', (message) => {
 
-	//Filter message command
-	if(!message.author.bot && message.content.startsWith("!filter")){
-	    filteredmessage = message.content;
-	    //message.channel.send("It\'s fine now. Why? Because I am here!");
-	    //we want to read the message here
-	    //we can use the message.content to get the message content
-	    //have to filter through the message content to get rid of words like "like, and, the etc"
+  nounArray = [];
 
-	    filteredmessage = removeUselessWords(filteredmessage);
-	    if(filteredmessage != " "){
-	      console.log(filteredmessage);
-	      message.channel.send(filteredmessage);
-	    }
-		else{
-	      message.channel.send("No usable words nerd");
-	    }
-	  }
-
-  	//Pirate translator
-	else if(!message.author.bot && message.content.startsWith("!pirate")){
+  //Pirate translator
+  if (!message.author.bot && message.content.startsWith("!pirate")) {
 	  	console.log("Executed !pirate command");
 	  	// message.channel.send("Executed !pirate command");
 	  	var messageContent = message.content;        
@@ -60,50 +46,141 @@ client.on('message', (message)=>{
 	  	.catch(function (error){
 	  		console.log(error);
 	  	});
-	  }
+  }
 
-  	//Shakespeare english tranlsator
-	else if(!message.author.bot && message.content.startsWith("!peary")){
-	  	console.log("Executed !peary command");
-	  	message.channel.send("Executed !peary command");
-	  }
-  	//Corporate BS generator
-	else if(!message.author.bot && message.content.startsWith("!corpbs")){
-		console.log("Executed !corpbs command");
+  //Corporate BS generator
+  else if (!message.author.bot && message.content.startsWith("!corpbs")) {		
+  	console.log("Executed !corpbs command");
 
-		var uri = "https://corporatebs-generator.sameerkumar.website";
+	var uri = "https://corporatebs-generator.sameerkumar.website";
+	axios({
+  		method: 'get',
+  		url: uri
+  	})
+  	.then(function (response){
+  		var corpbs_trans = response.data.phrase;
+  		console.log(corpbs_trans);
+  		message.channel.send(corpbs_trans);
+  	})
+  	.catch(function (error){
+  		console.log(error);
+  	});
+  }
 
-		axios({
-	  		method: 'get',
-	  		url: uri
-	  	})
-	  	.then(function (response){
-	  		var corpbs_trans = response.data.phrase;
-	  		console.log(corpbs_trans);
-
-	  		message.channel.send(corpbs_trans);
-	  	})
-	  	.catch(function (error){
-	  		console.log(error);
-	  	});
-	  }
-
-	});
-
-    var removeUselessWords = function(txt) {
-      var uselessWordsArray =
-        [
-          "a", "at", "be", "can", "cant", "could", "couldnt",
-          "do", "does", "dare", "dared", "how", "havent", "i", "in", "is", "many", "may", "might", "much", "must", "of",
-          "on", "or", "should", "shouldnt", "so", "such", "the",
-          "them", "they", "to", "us",  "we", "what", "who", "why",
-          "with", "wont", "would", "wouldnt", "you", "and|"
-        ];
-        var expStr = uselessWordsArray.join("|");
-        var text = txt.replace(new RegExp('\!filter', 'gi'), ' ')
-                        .replace(/\s{2,}/g, ' ');     
-        //Removes useless words         
-        return text.replace(new RegExp('\\b(' + expStr + ')\\b', 'gi'), ' ')
-                        .replace(/\s{2,}/g, ' ');
+  //remove all non nouns
+  function removeUselessWords(txt) {
+    txt = txt.replace(new RegExp('!filter', 'gi'), ' ')
+      .replace(/\s{2,}/g, ' ');
+    if(txt === " "){
+      
+    }else{
+      txtArray = txt.split(" ");
+      txtArray.shift();
+      for (var wordPos in txtArray) {
+        //console.log(txtArray[wordPos].replace(/\s/g, ''));
+        oxfordApiCall(txtArray[wordPos]).then(temp => {})
+        //let temp = await oxfordApiCall(txtArray[wordPos]);
+        //console.log("temp");
+      }
     }
+  }
+
+
+  async function oxfordApiCall(word) {
+
+    const app_id = ""; // insert your APP Id
+    const app_key = ""; // insert your APP Key
+    const wordId = word.toLowerCase();;
+    const fields = "definitions";
+    const strictMatch = "false";
+
+    const options = {
+      host: 'od-api.oxforddictionaries.com',
+      port: '443',
+      path: '/api/v2/entries/en-gb/' + wordId + '?fields=' + fields + '&strictMatch=' + strictMatch,
+      method: "GET",
+      headers: {
+        'app_id': app_id,
+        'app_key': app_key
+      }
+    };
+    try {
+      let response = await http.get(options, (resp) => {
+        let body = '';
+        resp.on('data', (d) => {
+          body += d;
+        });
+        resp.on('end', () => {
+          jsonData = JSON.parse(body);
+          if (Object.keys(jsonData)[0] != "error") {
+            if (jsonData.results[0].lexicalEntries[0].lexicalCategory.text === "Noun") {
+              if (word.length < 3) {
+
+              } else {
+                console.log("Noun!");
+                addToNounArray(word);
+              }
+            }
+          }
+        });
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  function addToNounArray(noun) {
+    nounArray.push(noun);
+  }
+
+  //I've got it so it does it in order now but it does it every time there is a word, may wanna add something to fix that or else it'll spam chat for each noun
+  function sendMessage(words) {
+    console.log(words);
+    if (words[0] != " ") {
+      jokeWord = words[(Math.random() * words.length) | 0];
+      message.channel.send(jokeWord);
+      jokeAPICall(jokeWord);
+    }
+  }
+
+  function jokeAPICall(word) {
+    // url = "https://webknox-jokes.p.rapidapi.com"
+    // const options = {
+    //   method: "GET",
+    //   url: url,
+    //   headers:{
+    //     "X-RapidAPI-Host": "",
+    //     "X-RapidAPI-Key": ""
+    //   }
+    // };
+
+    const options = {
+      host: 'webknox-jokes.p.rapidapi.com',
+      port: '443',
+      path: "/jokes/search?category=Pun&minRating=5&numJokes=1&keywords=" + word,
+      method: "GET",
+      headers: {
+        'X-RapidAPI-Host': "webknox-jokes.p.rapidapi.com",
+        'X-RapidAPI-Key': ""
+      }
+    }
+    
+    http.get(options, (resp) => {
+      let body = '';
+      resp.on('data', (d) => {
+        body += d;
+      });
+      resp.on('end', () => {
+        jsonData = JSON.parse(body);
+        console.log(jsonData);
+        if(jsonData.length > 0){
+          jokeString = jsonData[0].joke;
+          message.channel.send(jokeString);
+        }
+      });
+    });
+  }
+});
+
+
 client.login(auth.token);
