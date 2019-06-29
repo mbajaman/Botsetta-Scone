@@ -62,7 +62,7 @@ client.on('message', (message) => {
 
   //Help Command
   else if (!message.author.bot && message.content.startsWith("!help")) {		
-  	message.channel.send("```You can refer to the documentation here to look up bot commands!\nhttps://github.com/mbajaman/Botsetta-Scone/blob/master/README.md\nTo get the jokes feature working feel free to spam a bit in the channel as there is a 1/10 chance for the message to get turned into a joke```")
+  	message.channel.send("```You can refer to the documentation here to look up bot commands!\n\nhttps://github.com/mbajaman/Botsetta-Scone/blob/master/README.md\n\nTo get the jokes feature working feel free to spam a bit in the channel as its set for a 1/10 chance to get a joke for you ```")
   }
   else if (!message.author.bot) {
     chance = Math.floor(Math.random() * 10);
