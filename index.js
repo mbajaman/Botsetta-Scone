@@ -18,100 +18,103 @@ const client = new Discord.Client({
 
 client.on('message', (message) => {
 
-  nounArray = [];
-
   //Filter message command
-  if (!message.author.bot && message.content.startsWith("!filter")) {
-    nounArray = [];
-    filteredmessage = message.content
-
-    removeUselessWords(filteredmessage);
-    // if (filteredmessage != " ") {
-    //   console.log(filteredmessage);
-    //   message.channel.send(filteredmessage);
-    // } else {
-    //   message.channel.send("No usable words nerd");
-    // }
-  }
+  
   //Pirate translator
-  else if (!message.author.bot && message.content.startsWith("!pirate")) {
+  if (!message.author.bot && message.content.startsWith("!pirate")) {
     console.log("Executed !pirate command");
     message.channel.send("Executed !pirate command");
-  }
-  //Shakespeare english tranlsator
-  else if (!message.author.bot && message.content.startsWith("!")) {
-    console.log("Executed !peary command");
-    message.channel.send("Executed !peary command");
   }
   //Corporate BS generator
   else if (!message.author.bot && message.content.startsWith("!corpbs")) {
     console.log("Executed !corpbs command");
     message.channel.send("Executed !corpbs command");
   }
-
-
-
-  //remove all non nouns
-  function removeUselessWords(txt) {
-    txt = txt.replace(new RegExp('!filter', 'gi'), ' ')
-      .replace(/\s{2,}/g, ' ');
-    if(txt === " "){
-      
-    }else{
-      txtArray = txt.split(" ");
-      txtArray.shift();
-      for (var wordPos in txtArray) {
-        //console.log(txtArray[wordPos].replace(/\s/g, ''));
-        oxfordApiCall(txtArray[wordPos]).then(temp => {})
-        //let temp = await oxfordApiCall(txtArray[wordPos]);
-        //console.log("temp");
-      }
-    }
-  
+  else if (!message.author.bot) {
+    filteredmessage = message.content
+    removeUselessWords(filteredmessage);
   }
 
 
-  async function oxfordApiCall(word) {
+  //remove all non nouns
+  async function removeUselessWords(txt) {
+    nounArray = [];
+    txt = txt.replace(new RegExp('!filter', 'gi'), ' ')
+      .replace(/\s{2,}/g, ' ');
+    if (txt === " ") {
 
-    const app_id = ""; // insert your APP Id
-    const app_key = ""; // insert your APP Key
-    const wordId = word.toLowerCase();;
-    const fields = "definitions";
-    const strictMatch = "false";
-
-    const options = {
-      host: 'od-api.oxforddictionaries.com',
-      port: '443',
-      path: '/api/v2/entries/en-gb/' + wordId + '?fields=' + fields + '&strictMatch=' + strictMatch,
-      method: "GET",
-      headers: {
-        'app_id': app_id,
-        'app_key': app_key
+    } else {
+      txtArray = txt.split(" ");
+      txtArray.shift();
+      for (var wordPos in txtArray) {
+        console.log("Started waiting");
+        var isNoun = await oxfordApiCall(txtArray[wordPos].replace(/[^\w\s]/gi, ''));
+        console.log("finished waiting");
+        if(isNoun){
+          nounArray.push(txtArray[wordPos]);
+        }
+        console.log("==================");
       }
-    };
-    try {
-      let response = await http.get(options, (resp) => {
-        let body = '';
-        resp.on('data', (d) => {
-          body += d;
-        });
-        resp.on('end', () => {
-          jsonData = JSON.parse(body);
-          if (Object.keys(jsonData)[0] != "error") {
-            if (jsonData.results[0].lexicalEntries[0].lexicalCategory.text === "Noun") {
-              if (word.length < 3) {
+      
+      sendMessage(nounArray);
+    }
 
+  }
+
+
+  function oxfordApiCall(word) {
+    return new Promise(function(resolve, reject) {
+      isNoun = false;
+      const app_id = "4885517e"; // insert your APP Id
+      const app_key = "13ee867b28de76f474342fd8e7307b51"; // insert your APP Key
+      const wordId = word.toLowerCase();;
+      const fields = "definitions";
+      const strictMatch = "false";
+
+      const options = {
+        host: 'od-api.oxforddictionaries.com',
+        port: '443',
+        path: '/api/v2/entries/en-gb/' + wordId + '?fields=' + fields + '&strictMatch=' + strictMatch,
+        method: "GET",
+        headers: {
+          'app_id': app_id,
+          'app_key': app_key
+        }
+      };
+      try {
+        http.get(options, (resp) => {
+          let body = '';
+          resp.on('data', (d) => {
+            body += d;
+          });
+          resp.on('end', () => {
+            jsonData = JSON.parse(body);
+            if (Object.keys(jsonData)[0] != "error") {
+              console.log("Word found!");
+              if (jsonData.results[0].lexicalEntries[0].lexicalCategory.text === "Noun") {
+                if (word.length < 3) {
+                  console.log(word + " is too small");
+                  resolve(isNoun);
+                } else {
+                  console.log(word + "Noun!");
+                  isNoun = true;
+                  resolve(isNoun);
+                }
               } else {
-                console.log("Noun!");
-                addToNounArray(word);
+                console.log(word + " is not a noun");
+                resolve(isNoun);
               }
             }
-          }
+            else{
+              resolve(isNoun);
+            }
+          });
         });
-      });
-    } catch (err) {
-      console.log(err);
-    }
+      } catch (err) {
+        console.log(err);
+      }
+    });
+
   }
 
   function addToNounArray(noun) {
@@ -123,21 +126,11 @@ client.on('message', (message) => {
     console.log(words);
     if (words[0] != " ") {
       jokeWord = words[(Math.random() * words.length) | 0];
-      message.channel.send(jokeWord);
       jokeAPICall(jokeWord);
     }
   }
 
   function jokeAPICall(word) {
-    // url = "https://webknox-jokes.p.rapidapi.com"
-    // const options = {
-    //   method: "GET",
-    //   url: url,
-    //   headers:{
-    //     "X-RapidAPI-Host": "",
-    //     "X-RapidAPI-Key": ""
-    //   }
-    // };
 
     const options = {
       host: 'webknox-jokes.p.rapidapi.com',
@@ -146,10 +139,10 @@ client.on('message', (message) => {
       method: "GET",
       headers: {
         'X-RapidAPI-Host': "webknox-jokes.p.rapidapi.com",
-        'X-RapidAPI-Key': ""
+        'X-RapidAPI-Key': "10661540e8msha03e97970406c1dp17bf18jsn14adbb197094"
       }
     }
-    
+
     http.get(options, (resp) => {
       let body = '';
       resp.on('data', (d) => {
@@ -158,7 +151,7 @@ client.on('message', (message) => {
       resp.on('end', () => {
         jsonData = JSON.parse(body);
         console.log(jsonData);
-        if(jsonData.length > 0){
+        if (jsonData.length > 0) {
           jokeString = jsonData[0].joke;
           message.channel.send(jokeString);
         }
